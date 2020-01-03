@@ -5,6 +5,7 @@ author: Cosmic Effect
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
+  flutter: ">=1.10.0 <2.0.0"
 
 dependencies:
   flutter:
@@ -16,5 +17,7 @@ dev_dependencies:
 
 flutter:
   plugin:
-    androidPackage: br.com.cosmiceffect.pdf_renderer
-    pluginClass: PdfRendererPlugin
+    platforms:
+      android:
+        package: br.com.cosmiceffect.pdf_renderer
+        pluginClass: PdfRendererPlugin
