@@ -1,17 +1,19 @@
-class PdfDocument {
-  PdfDocument._(this._handler);
+import 'dart:io';
 
-  final PdfDocumentHandler _handler;
+abstract class PdfDocument {
+  Future<int> get pageCount;
+
+  Future<PdfPage> getPage(int pageIndex);
+
+  Future<void> close();
 }
 
-class PdfPage {}
+abstract class PdfPage {
+  File get path;
+}
 
-class PdfDocumentHandler {
-  PdfDocumentHandler(this.id);
+class ResourceClosedException implements Exception {
+  ResourceClosedException([this.message]);
 
-  final String id;
-
-  PdfDocument createDocument() {
-    return PdfDocument._(this);
-  }
+  final message;
 }
