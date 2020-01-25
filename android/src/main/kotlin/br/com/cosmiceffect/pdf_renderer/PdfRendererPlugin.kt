@@ -73,16 +73,16 @@ class PdfRendererPluginHandler : MethodCallHandler {
         workerThread = null
 
         pdfCore?.let { core ->
-            pdfReaderMap.forEach { entry ->
-                entry.value?.let {
+            val handlers = pdfReaderMap.keys
+            for (handlerId in handlers) {
+                val document = pdfReaderMap.remove(handlerId)
+                document?.let {
                     core.closeDocument(it)
                 }
             }
         }
 
         pdfCore = null
-
-        pdfReaderMap.clear()
 
         try {
             getContext()?.let { context ->
@@ -116,11 +116,10 @@ class PdfRendererPluginHandler : MethodCallHandler {
             return
         }
 
-        pdfReaderMap[handlerId]?.let {
+        val document = pdfReaderMap.remove(handlerId)
+        document?.let {
             pdfCore?.closeDocument(it)
         }
-
-        pdfReaderMap.remove(handlerId)
 
         Log.d("pdf_renderer", "Dismissed PDF renderer handler")
         result.success(true)
@@ -163,11 +162,26 @@ class PdfRendererPluginHandler : MethodCallHandler {
                 pdfCore?.let { core ->
                     val framebuffer: Bitmap?
                     try {
+                        if (!pdfReaderMap.containsKey(handlerId)) {
+                            // Handles the dismissal of open document while worker is trying to open a page
+                            return@let
+                        }
+
                         core.openPage(document, pageIndex)
+
+                        if (!pdfReaderMap.containsKey(handlerId)) {
+                            return@let
+                        }
+
                         val size = core.getPageSize(document, pageIndex)
+
+                        if (!pdfReaderMap.containsKey(handlerId)) {
+                            return@let
+                        }
+
                         framebuffer = Bitmap.createBitmap(size.width, size.height, Bitmap.Config.RGB_565)
                         core.renderPageBitmap(document, framebuffer, pageIndex, 0, 0, size.width, size.height)
-                    }catch (e: Exception) {
+                    }catch (e: Throwable) {
                         return@let
                     }
 
