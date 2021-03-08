@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -11,22 +12,30 @@ class PdfRenderer {
   static const MethodChannel _channel =
       const MethodChannel('br.com.cosmiceffect.pdf_renderer');
 
-  static Future<PdfDocument> openDocument(File pdfFile) async {
-    if (pdfFile?.existsSync() != true) {
-      throw FileSystemException('PDF document not found', pdfFile?.path);
+  static Future<PdfDocument?> openDocument(File pdfFile) async {
+    if (!pdfFile.existsSync()) {
+      throw FileSystemException('PDF document not found', pdfFile.path);
     }
 
-    String handlerId;
+    String? handlerId;
 
     try {
       handlerId = await _channel.invokeMethod<String>(
           'createPdfDocumentHandler', pdfFile.absolute.path);
-    } on PlatformException catch (_) {
+    } on PlatformException catch (e) {
+      if (!kReleaseMode) {
+        log(
+          'Could not create document handler',
+          error: e,
+          name: 'pdf_renderer',
+        );
+      }
+
       handlerId = null;
     }
 
     if (handlerId?.isNotEmpty ?? false) {
-      return PdfDocumentHandler(handlerId).createDocument();
+      return PdfDocumentHandler(handlerId!).createDocument();
     }
 
     return null;
@@ -49,7 +58,7 @@ class PdfDocumentHandler {
     await PdfRenderer._channel.invokeMethod('closeDocument', this.id);
   }
 
-  Future<String> openPage(int pageIndex) => PdfRenderer._channel
+  Future<String?> openPage(int pageIndex) => PdfRenderer._channel
       .invokeMethod('openPage', <dynamic>[this.id, pageIndex]);
 }
 
@@ -61,7 +70,7 @@ class PdfDocumentImpl extends PdfDocument {
   bool _isOpen = true;
 
   @override
-  Future<PdfPage> getPage(int pageIndex) async {
+  Future<PdfPage?> getPage(int pageIndex) async {
     if (!_isOpen) {
       throw ResourceClosedException("Can't use a document after it's closed");
     }

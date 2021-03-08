@@ -3,7 +3,7 @@ import 'dart:io';
 abstract class PdfDocument {
   Future<int> get pageCount;
 
-  Future<PdfPage> getPage(int pageIndex);
+  Future<PdfPage?> getPage(int pageIndex);
 
   Future<void> close();
 }
